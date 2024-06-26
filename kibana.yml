@@ -1,0 +1,20 @@
+# Kibana configuration
+
+server.name: "kibana"  # Set the Kibana server name
+server.host: "0.0.0.0"  # Bind to all network interfaces
+server.ssl.enabled: true  # Enable SSL for Kibana server
+server.ssl.certificate: /usr/share/kibana/config/certs/cert.pem  # Path to the SSL certificate
+server.ssl.key: /usr/share/kibana/config/certs/privkey.pem  # Path to the SSL key
+
+elasticsearch.hosts: ["https://elasticsearch:9200"]  # Elasticsearch URL
+elasticsearch.ssl.certificateAuthorities: /usr/share/kibana/config/certs/fullchain.pem  # Path to the CA certificate
+elasticsearch.ssl.verificationMode: certificate  # Set verification mode for SSL
+
+logging.dest: /usr/share/kibana/logs/kibana.log  # Path to store logs
+
+xpack.security.enabled: true  # Enable X-Pack security
+xpack.security.encryptionKey: "a_very_secure_and_long_encryption_key"  # Encryption key for X-Pack security
+xpack.security.session.idleTimeout: "1h"  # Set session idle timeout
+xpack.security.session.lifespan: "8h"  # Set session lifespan
+
+# Other configurations...

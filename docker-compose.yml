@@ -1,0 +1,86 @@
+version: '3.8'  # Specify the version of Docker Compose
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1  # Use the official Elasticsearch image
+    container_name: elasticsearch  # Name the container
+    environment:
+      - node.name=elasticsearch  # Set the node name for Elasticsearch
+      - discovery.type=single-node  # Run Elasticsearch in single-node mode
+      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=/usr/share/elasticsearch/config/certs/fullchain.pem  # Path to the CA certificate
+      - ELASTICSEARCH_SSL_CERTIFICATE=/usr/share/elasticsearch/config/certs/cert.pem  # Path to the SSL certificate
+      - ELASTICSEARCH_SSL_KEY=/usr/share/elasticsearch/config/certs/privkey.pem  # Path to the SSL key
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"  # Set the Java heap size for Elasticsearch
+    ulimits:
+      memlock:
+        soft: -1  # Set soft limit for memory lock to unlimited
+        hard: -1  # Set hard limit for memory lock to unlimited
+    volumes:
+      - ./data/elasticsearch:/usr/share/elasticsearch/data  # Mount the data directory
+      - ./certs/elastic:/usr/share/elasticsearch/config/certs  # Mount the certificates directory
+      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml  # Mount the Elasticsearch configuration file
+      - ./logs:/usr/share/elasticsearch/logs  # Mount the logs directory
+    ports:
+      - "9200:9200"  # Map port 9200 for Elasticsearch
+    restart: always  # Always restart the container if it fails
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f https://localhost:9200 || exit 1"]  # Health check command
+      interval: 30s  # Interval between health checks
+      timeout: 10s  # Timeout for each health check
+      retries: 3  # Number of retries before considering the service as unhealthy
+    networks:
+      - elk  # Connect to the ELK network
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.17.1  # Use the official Logstash image
+    container_name: logstash  # Name the container
+    environment:
+      - LS_JAVA_OPTS=-Xmx256m -Xms256m  # Set the Java heap size for Logstash
+    volumes:
+      - ./certs/logstash:/usr/share/logstash/config/certs  # Mount the certificates directory
+      - ./logstash/pipeline:/usr/share/logstash/pipeline  # Mount the pipeline configuration directory
+      - ./logstash.yml:/usr/share/logstash/config/logstash.yml  # Mount the Logstash configuration file
+      - ./logs:/usr/share/logstash/logs  # Mount the logs directory
+    ports:
+      - "5044:5044"  # Map port 5044 for Logstash
+    restart: always  # Always restart the container if it fails
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f https://localhost:9600/_node/stats || exit 1"]  # Health check command
+      interval: 30s  # Interval between health checks
+      timeout: 10s  # Timeout for each health check
+      retries: 3  # Number of retries before considering the service as unhealthy
+    depends_on:
+      elasticsearch:
+        condition: service_healthy  # Wait for Elasticsearch to be healthy before starting Logstash
+    networks:
+      - elk  # Connect to the ELK network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.1  # Use the official Kibana image
+    container_name: kibana  # Name the container
+    environment:
+      - ELASTICSEARCH_URL=https://elasticsearch:9200  # Set the Elasticsearch URL
+      - SERVER_SSL_ENABLED=true  # Enable SSL for Kibana
+      - SERVER_SSL_CERTIFICATE=/usr/share/kibana/config/certs/cert.pem  # Path to the SSL certificate
+      - SERVER_SSL_KEY=/usr/share/kibana/config/certs/privkey.pem  # Path to the SSL key
+    volumes:
+      - ./certs/kibana:/usr/share/kibana/config/certs  # Mount the certificates directory
+      - ./kibana.yml:/usr/share/kibana/config/kibana.yml  # Mount the Kibana configuration file
+      - ./logs:/usr/share/kibana/logs  # Mount the logs directory
+    ports:
+      - "5601:5601"  # Map port 5601 for Kibana
+    restart: always  # Always restart the container if it fails
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f https://localhost:5601/api/status || exit 1"]  # Health check command
+      interval: 30s  # Interval between health checks
+      timeout: 10s  # Timeout for each health check
+      retries: 3  # Number of retries before considering the service as unhealthy
+    depends_on:
+      elasticsearch:
+        condition: service_healthy  # Wait for Elasticsearch to be healthy before starting Kibana
+    networks:
+      - elk  # Connect to the ELK network
+
+networks:
+  elk:
+    driver: bridge  # Use the bridge driver for the ELK network

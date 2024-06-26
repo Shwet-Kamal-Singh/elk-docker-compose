@@ -1,0 +1,27 @@
+# Elasticsearch configuration
+
+# Cluster settings
+cluster.name: "docker-cluster" # Name of the Elasticsearch cluster
+node.name: "node-1"
+network.host: 0.0.0.0  # Bind to all network interfaces
+
+# Paths
+path.data: /usr/share/elasticsearch/data # Path to store data
+path.logs: /usr/share/elasticsearch/logs # Path to store logs
+
+# Memory
+bootstrap.memory_lock: true
+
+# Security
+xpack.security.enabled: true  # Enable X-Pack security
+xpack.security.transport.ssl.enabled: true  # Enable SSL for transport layer
+xpack.security.transport.ssl.verification_mode: certificate  # Set verification mode for SSL
+xpack.security.transport.ssl.keystore.path: /usr/share/elasticsearch/config/certs/elastic-certificates.p12  # Path to the keystore
+xpack.security.transport.ssl.truststore.path: /usr/share/elasticsearch/config/certs/elastic-certificates.p12  # Path to the truststore
+
+xpack.security.http.ssl.enabled: true  # Enable SSL for HTTP layer
+xpack.security.http.ssl.keystore.path: /usr/share/elasticsearch/config/certs/elastic-certificates.p12  # Path to the keystore
+xpack.security.http.ssl.truststore.path: /usr/share/elasticsearch/config/certs/elastic-certificates.p12  # Path to the truststore
+
+# Discovery
+discovery.type: single-node
